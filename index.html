@@ -40,7 +40,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard','Ap
 .step{background:var(--green);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
 .card-body{padding:16px 18px}
 label{display:block;font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:4px}
-input[type=text],input[type=password],select{font-family:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--border-s);border-radius:5px;background:#fff;color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+input[type=text],select{font-family:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--border-s);border-radius:5px;background:#fff;color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
 input:focus,select:focus{outline:none;border-color:var(--greenm);box-shadow:0 0 0 3px rgba(74,124,47,.12)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.grid2{grid-template-columns:1fr}.sidebar{display:none}.main{margin-left:0}}
@@ -117,23 +117,21 @@ input:focus,select:focus{outline:none;border-color:var(--greenm);box-shadow:0 0 
     <button class="nav-btn on" onclick="goPanel('search',this)">🔍 주소 조회</button>
     <button class="nav-btn" onclick="goPanel('history',this)">🕘 조회 이력</button>
   </nav>
-  <div class="sb-foot">
-    인증키는 Cloudflare Worker에서만 처리됩니다
-  </div>
+  <div class="sb-foot">국토교통부 VWorld 기반<br>참고용으로만 활용하세요</div>
 </aside>
 
 <div class="main">
   <div class="topbar">
     <div class="topbar-title" id="topbar-title">주소 조회</div>
   </div>
-
   <div class="content">
 
     <!-- 조회 패널 -->
     <div class="panel on" id="panel-search">
 
       <div class="card">
-        <div class="card-head"><h2><span class="step">1</span> 조회할 주소</h2>
+        <div class="card-head">
+          <h2><span class="step">1</span> 조회할 주소</h2>
           <button class="btn bg bsm" id="clear-btn" onclick="clearAddrs()" style="display:none">전체 삭제</button>
         </div>
         <div class="card-body">
@@ -208,7 +206,6 @@ input:focus,select:focus{outline:none;border-color:var(--greenm);box-shadow:0 0 
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- 이력 패널 -->
@@ -216,6 +213,7 @@ input:focus,select:focus{outline:none;border-color:var(--greenm);box-shadow:0 0 
       <div class="card">
         <div class="card-head"><h2>조회 이력</h2><span class="tag ta" id="hist-cnt"></span></div>
         <div class="card-body">
+          <div class="hint" style="margin-bottom:10px">브라우저를 닫으면 이력이 사라집니다.</div>
           <ul id="sess-list" class="sess-list"></ul>
         </div>
       </div>
@@ -226,8 +224,9 @@ input:focus,select:focus{outline:none;border-color:var(--greenm);box-shadow:0 0 
 </div>
 
 <script>
-// ── Worker URL (배포 후 실제 URL로 변경) ──
-const WORKER = 'gongsijiga.nomusakoo.workers.dev';
+// ── 인증키 (VWorld에 이 페이지의 GitHub Pages 도메인 등록 필요) ──
+const VWORLD_KEY = ' FE22362E-A5C3-3FF2-913E-0485EB075462';
+const API = 'https://api.vworld.kr';
 
 const SIDO = {
   '서울':'서울특별시','부산':'부산광역시','대구':'대구광역시','인천':'인천광역시',
@@ -238,7 +237,7 @@ const SIDO = {
 const COLORS = ['#2d5016','#4a7c2f','#c0a020','#a05020','#8b2020','#2060a0','#604080','#206080','#20806c','#7c5c00'];
 
 let addrs = [], addrMode = 'parcel', lastData = null, chartInst = null;
-const history = [];
+const sessHistory = [];
 
 // ── 연도 드롭다운 ──
 const now = new Date().getFullYear();
@@ -275,7 +274,7 @@ function goPanel(name, btn) {
   document.getElementById('panel-'+name).classList.add('on');
   btn.classList.add('on');
   document.getElementById('topbar-title').textContent = name==='search' ? '주소 조회' : '조회 이력';
-  if (name === 'history') renderHistory();
+  if (name==='history') renderHistory();
 }
 
 // ── 주소 모드 ──
@@ -285,7 +284,7 @@ function setMode(m, btn) {
   btn.classList.add('on');
   const inp = document.getElementById('addr-input');
   const hint = document.getElementById('mode-hint');
-  if (m === 'parcel') {
+  if (m==='parcel') {
     inp.placeholder = '예) 서울특별시 광진구 자양동 787';
     hint.innerHTML = '지번 주소 기준. 번지까지 입력 후 <b>후보 클릭</b>으로 추가.';
   } else {
@@ -297,15 +296,15 @@ function setMode(m, btn) {
 
 // ── 주소 목록 ──
 function renderList() {
-  const ul = document.getElementById('addr-list'); ul.innerHTML = '';
+  const ul = document.getElementById('addr-list'); ul.innerHTML='';
   addrs.forEach((a, i) => {
-    const li = document.createElement('li'); li.className = 'chip';
-    li.innerHTML = `<span class="chip-n">${i+1}</span><span class="chip-t">${a}</span>
+    const li = document.createElement('li'); li.className='chip';
+    li.innerHTML=`<span class="chip-n">${i+1}</span><span class="chip-t">${a}</span>
       <button class="bico" onclick="removeAddr(${i})">✕</button>`;
     ul.appendChild(li);
   });
   document.getElementById('addr-cnt').textContent = '추가된 주소: '+addrs.length+'건';
-  document.getElementById('clear-btn').style.display = addrs.length>1 ? 'inline-flex':'none';
+  document.getElementById('clear-btn').style.display = addrs.length>1?'inline-flex':'none';
 }
 function addAddr() {
   const inp = document.getElementById('addr-input');
@@ -327,30 +326,22 @@ function onAddrInput() {
 async function fetchSugg(q) {
   const parts = q.split(' ');
   if (parts[0] && SIDO[parts[0]]) q = [SIDO[parts[0]],...parts.slice(1)].join(' ');
-
-  const params = new URLSearchParams({
-    type:'search', service:'search', request:'search', version:'2.0',
-    query:q, 'type_':'address', category: addrMode==='road' ? 'road':'parcel',
-    size:'10', page:'1'
+  const p = new URLSearchParams({
+    service:'search', request:'search', version:'2.0', type:'address',
+    query:q, category: addrMode==='road'?'road':'parcel',
+    format:'json', size:'10', page:'1', key:VWORLD_KEY
   });
-  // type 파라미터가 worker 라우팅용이라 별도 처리
-  const workerParams = new URLSearchParams({
-    type:'search', service:'search', request:'search', version:'2.0',
-    query:q, category: addrMode==='road' ? 'road':'parcel',
-    size:'10', page:'1'
-  });
-
   try {
-    const r = await fetch(WORKER+'?'+workerParams);
+    const r = await fetch(API+'/req/search?'+p);
     const d = await r.json();
     const items = d?.response?.result?.items || [];
     const out = [];
     items.forEach(it => {
-      const title = it.title || (addrMode==='road' ? it.address?.road : it.address?.parcel);
+      const title = it.address ? (addrMode==='road' ? it.address.road : it.address.parcel) : it.title;
       if (title && !out.includes(title)) out.push(title);
     });
     renderSugg(out.slice(0,10));
-  } catch(e) { showSuggMsg('자동완성 오류 — Worker URL을 확인하세요'); }
+  } catch(e) { showSuggMsg('오류 — 잠시 후 다시 시도하세요'); }
 }
 function renderSugg(items) {
   const ul = document.getElementById('suggest'); ul.innerHTML='';
@@ -373,13 +364,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#addr-input') && !e.target.closest('#suggest')) hideSugg();
 });
 
-// ── API 호출 (모두 Worker 경유) ──
-async function api(type, params) {
-  const p = new URLSearchParams({ type, ...params });
-  const r = await fetch(WORKER+'?'+p);
-  return r.json();
-}
-
+// ── API 호출 ──
 async function geocode(addr) {
   const parts = addr.split(' ');
   const cands = [];
@@ -389,7 +374,12 @@ async function geocode(addr) {
   for (const type of types) {
     for (const cand of cands) {
       try {
-        const d = await api('geocode', { service:'address', request:'getcoord', version:'2.0', crs:'epsg:4326', address:cand, type });
+        const p = new URLSearchParams({
+          service:'address', request:'getcoord', version:'2.0',
+          crs:'epsg:4326', address:cand, format:'json', type, key:VWORLD_KEY
+        });
+        const r = await fetch(API+'/req/address?'+p);
+        const d = await r.json();
         if (d?.response?.status==='OK') {
           const pt = d.response.result.point;
           return { x:pt.x, y:pt.y, err:null };
@@ -402,12 +392,15 @@ async function geocode(addr) {
 
 async function getPNU(x, y) {
   try {
-    const d = await api('feature', {
+    const p = new URLSearchParams({
       service:'data', request:'GetFeature', data:'LP_PA_CBND_BUBUN',
-      format:'json', geomFilter:`POINT(${x} ${y})`, crs:'EPSG:4326', geometry:'false', size:'1'
+      format:'json', geomFilter:`POINT(${x} ${y})`,
+      crs:'EPSG:4326', geometry:'false', size:'1', key:VWORLD_KEY
     });
+    const r = await fetch(API+'/req/data?'+p);
+    const d = await r.json();
     const features = d?.response?.result?.featureCollection?.features || [];
-    if (!features.length) return { pnu:null, err:'해당 좌표에 필지 없음' };
+    if (!features.length) return { pnu:null, err:'필지 없음' };
     const pnu = features[0].properties?.pnu || features[0].properties?.PNU;
     return pnu ? { pnu, err:null } : { pnu:null, err:'PNU 없음' };
   } catch(e) { return { pnu:null, err:'지적도 오류' }; }
@@ -415,12 +408,16 @@ async function getPNU(x, y) {
 
 async function getPrice(pnu, year) {
   try {
-    const d = await api('price', { pnu, stdrYear:String(year), numOfRows:'10', pageNo:'1' });
+    const p = new URLSearchParams({
+      pnu, stdrYear:String(year), format:'json',
+      numOfRows:'10', pageNo:'1', key:VWORLD_KEY
+    });
+    const r = await fetch(API+'/ned/data/getIndvdLandPriceAttr?'+p);
+    const d = await r.json();
     let field = d?.indvdLandPrices?.field;
     if (!field) return '';
     if (!Array.isArray(field)) field=[field];
-    if (!field.length) return '';
-    return field[0].pblntfPclnd || field[0].individualLandPrice || field[0].ladpcl || '';
+    return field[0]?.pblntfPclnd || field[0]?.individualLandPrice || '';
   } catch(e) { return ''; }
 }
 
@@ -430,7 +427,7 @@ async function lookupOne(addr, year) {
   const { pnu, err:e2 } = await getPNU(x, y);
   if (e2) return { price:'', note:e2, pnu:'' };
   const price = await getPrice(pnu, year);
-  return { price, note: price?'':'공시지가 미확인', pnu };
+  return { price, note:price?'':'공시지가 미확인', pnu };
 }
 
 // ── 조회 실행 ──
@@ -438,7 +435,7 @@ async function runQuery() {
   if (!addrs.length) { alert('조회할 주소를 추가하세요.'); return; }
   const yf = +document.getElementById('yf').value;
   const yt = +document.getElementById('yt').value;
-  if (yf > yt) { alert('시작 연도가 종료 연도보다 클 수 없습니다.'); return; }
+  if (yf>yt) { alert('시작 연도가 종료 연도보다 클 수 없습니다.'); return; }
 
   const years = [];
   for (let y=yf; y<=yt; y++) years.push(y);
@@ -461,22 +458,20 @@ async function runQuery() {
   setTimeout(()=>{ pg.style.display='none'; }, 400);
 
   lastData = { years, rows };
-
-  // 이력 저장
-  history.unshift({
+  sessHistory.unshift({
     ts: new Date().toLocaleString('ko-KR'),
     range: `${yf}~${yt}`,
     addrs: [...addrs],
     data: lastData
   });
-  if (history.length > 20) history.pop();
+  if (sessHistory.length>20) sessHistory.pop();
 
   renderResults(lastData);
 }
 
 function setProg(done, total) {
-  const pct = total ? Math.round(done/total*100) : 0;
-  document.getElementById('prog-txt').textContent = done<total ? `조회 중… ${done}/${total}건`:`완료 (${total}건)`;
+  const pct = total?Math.round(done/total*100):0;
+  document.getElementById('prog-txt').textContent = done<total?`조회 중… ${done}/${total}건`:`완료 (${total}건)`;
   document.getElementById('prog-pct').textContent = pct+'%';
   document.getElementById('prog-bar').style.width = pct+'%';
 }
@@ -498,7 +493,7 @@ function renderResults(d) {
     let cells=`<td title="${addr}">${addr.length>24?addr.slice(0,22)+'…':addr}</td>`;
     const prices=years.map(y=>{ const p=rows[addr][y]?.price; return p?parseInt(p):null; });
     prices.forEach((p,i)=>{
-      if(p===null){ const note=rows[addr][years[i]]?.note||'—'; cells+=`<td class="terr" title="${note}">—</td>`; }
+      if(p===null){ cells+=`<td class="terr" title="${rows[addr][years[i]]?.note||''}">—</td>`; }
       else cells+=`<td class="tp">${p.toLocaleString('ko-KR')}</td>`;
     });
     const valid=prices.filter(p=>p!==null);
@@ -570,11 +565,11 @@ function dlCSV() {
 
 // ── 이력 ──
 function renderHistory() {
-  const ul = document.getElementById('sess-list'); ul.innerHTML='';
-  document.getElementById('hist-cnt').textContent = history.length+'건';
-  if (!history.length) { ul.innerHTML='<li class="estt">아직 조회 이력이 없습니다.</li>'; return; }
-  history.forEach((s,i)=>{
-    const preview = s.addrs.slice(0,2).join(', ')+(s.addrs.length>2?` 외 ${s.addrs.length-2}건`:'');
+  const ul=document.getElementById('sess-list'); ul.innerHTML='';
+  document.getElementById('hist-cnt').textContent=sessHistory.length+'건';
+  if (!sessHistory.length) { ul.innerHTML='<li class="estt">아직 조회 이력이 없습니다.</li>'; return; }
+  sessHistory.forEach(s=>{
+    const preview=s.addrs.slice(0,2).join(', ')+(s.addrs.length>2?` 외 ${s.addrs.length-2}건`:'');
     const li=document.createElement('li'); li.className='sess-item';
     li.innerHTML=`
       <div class="sess-meta"><span>${s.ts}</span><span class="sess-yr">${s.range}년</span></div>
