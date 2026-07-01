@@ -3,757 +3,595 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>개별공시지가 조회 위젯</title>
+<title>개별공시지가 조회</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-/* ── 세모글 위젯 전용 스타일 (smg- 접두어로 블로그 CSS와 충돌 방지) ── */
-.smg-widget {
-  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #1c1b18;
-  max-width: 800px;
-  margin: 0 auto;
+:root{
+  --bg:#f7f6f2;--surface:#fff;--border:#e2dfd8;--border-s:#c9c5bc;
+  --ink:#1c1b18;--ink2:#6b6860;--ink3:#9c9a95;
+  --green:#2d5016;--greenl:#eef4e8;--greenm:#4a7c2f;
+  --amber:#7c5c00;--amberl:#fdf6e0;
+  --red:#8b2020;--redl:#fdf0f0;
+  --r:7px;--sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
 }
-.smg-widget * { box-sizing: border-box; }
-
-/* 타이틀 */
-.smg-title {
-  font-family: 'Noto Serif KR', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #1c1b18;
-  margin: 0 0 4px;
-  letter-spacing: -.3px;
-}
-.smg-subtitle {
-  font-size: 12px;
-  color: #9c9a95;
-  margin: 0 0 20px;
-}
-
-/* 카드 */
-.smg-card {
-  background: #fff;
-  border: 1px solid #e2dfd8;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,.05);
-}
-.smg-card-head {
-  padding: 11px 16px;
-  border-bottom: 1px solid #e2dfd8;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #fafaf8;
-}
-.smg-card-head h3 {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0;
-  color: #1c1b18;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.smg-step {
-  background: #2d5016;
-  color: #fff;
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.smg-card-body { padding: 14px 16px; }
-
-/* 폼 */
-.smg-label {
-  display: block;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: #6b6860;
-  margin-bottom: 4px;
-}
-.smg-input {
-  font-family: inherit;
-  font-size: 13px;
-  padding: 8px 11px;
-  border: 1px solid #c9c5bc;
-  border-radius: 5px;
-  background: #fff;
-  color: #1c1b18;
-  width: 100%;
-  transition: border-color .15s, box-shadow .15s;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.smg-input:focus {
-  outline: none;
-  border-color: #4a7c2f;
-  box-shadow: 0 0 0 3px rgba(74,124,47,.1);
-}
-.smg-grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-@media (max-width: 560px) { .smg-grid2 { grid-template-columns: 1fr; } }
-
-/* 버튼 */
-.smg-btn {
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 14px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  transition: all .15s;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-.smg-btn:active { transform: translateY(1px); }
-.smg-btn-primary { background: #2d5016; color: #fff; }
-.smg-btn-primary:hover { background: #4a7c2f; }
-.smg-btn-ghost { background: transparent; color: #1c1b18; border: 1px solid #c9c5bc; }
-.smg-btn-ghost:hover { background: #f7f6f2; }
-.smg-btn-sm { font-size: 12px; padding: 5px 10px; }
-.smg-btn-icon { background: none; border: none; cursor: pointer; color: #9c9a95; padding: 3px 5px; border-radius: 3px; font-size: 14px; font-family: inherit; }
-.smg-btn-icon:hover { color: #8b2020; background: #fdf0f0; }
-.smg-btn-full { width: 100%; justify-content: center; font-size: 14px; padding: 10px; font-weight: 600; }
-
-/* 주소 모드 토글 */
-.smg-toggle {
-  display: flex;
-  gap: 3px;
-  background: #f0ede8;
-  border: 1px solid #c9c5bc;
-  border-radius: 6px;
-  padding: 3px;
-}
-.smg-tog-btn {
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 12px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  color: #6b6860;
-  background: transparent;
-  transition: all .15s;
-}
-.smg-tog-btn.on {
-  background: #fff;
-  color: #2d5016;
-  box-shadow: 0 1px 3px rgba(0,0,0,.1);
-}
-
-/* 검색창 + 자동완성 */
-.smg-srow { display: flex; gap: 7px; position: relative; }
-.smg-iwrap { flex: 1; position: relative; }
-.smg-sugg {
-  position: absolute;
-  top: calc(100% + 3px);
-  left: 0; right: 0;
-  z-index: 999;
-  background: #fff;
-  border: 1px solid #4a7c2f;
-  border-radius: 5px;
-  list-style: none;
-  margin: 0; padding: 4px 0;
-  max-height: 220px;
-  overflow: auto;
-  display: none;
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
-}
-.smg-sugg li { padding: 8px 13px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f7f6f2; }
-.smg-sugg li:hover { background: #eef4e8; }
-.smg-sugg li.smg-hint { color: #9c9a95; cursor: default; font-size: 12px; }
-.smg-sugg li.smg-hint:hover { background: none; }
-
-/* 주소 칩 목록 */
-.smg-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
-.smg-chip { display: flex; align-items: center; gap: 8px; background: #f7f6f2; border: 1px solid #e2dfd8; border-radius: 5px; padding: 6px 10px; font-size: 13px; }
-.smg-chip-n { font-size: 11px; font-weight: 600; color: #9c9a95; min-width: 16px; }
-.smg-chip-t { flex: 1; }
-.smg-addr-cnt { font-size: 12px; color: #9c9a95; margin-top: 7px; }
-
-/* 연도 범위 */
-.smg-yrrow { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
-.smg-yrgrp { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 200px; }
-.smg-yrgrp .smg-input { max-width: 120px; }
-.smg-yrsep { color: #9c9a95; font-size: 14px; }
-.smg-qbtns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
-
-/* 프로그레스 */
-.smg-prog {
-  background: #fff;
-  border: 1px solid #e2dfd8;
-  border-radius: 8px;
-  padding: 13px 16px;
-  margin-bottom: 12px;
-  display: none;
-}
-.smg-prog-lbl { font-size: 12px; color: #6b6860; margin-bottom: 6px; display: flex; justify-content: space-between; }
-.smg-prog-out { height: 5px; background: #f0ede8; border-radius: 999px; overflow: hidden; }
-.smg-prog-in { height: 100%; background: #4a7c2f; border-radius: 999px; transition: width .3s; width: 0%; }
-
-/* 결과 탭 */
-.smg-rtabs { display: flex; border-bottom: 2px solid #e2dfd8; margin-bottom: 14px; }
-.smg-rtab {
-  padding: 8px 16px;
-  font-size: 13px; font-weight: 500;
-  color: #9c9a95;
-  cursor: pointer;
-  border: none; border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  background: none;
-  font-family: inherit;
-  transition: color .15s;
-}
-.smg-rtab.on { color: #2d5016; border-bottom-color: #2d5016; }
-.smg-rtab:hover { color: #1c1b18; }
-.smg-tpanel { display: none; }
-.smg-tpanel.on { display: block; }
-
-/* 결과 테이블 */
-.smg-twrap { overflow-x: auto; }
-.smg-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.smg-tbl th { text-align: right; padding: 8px 10px; font-size: 11.5px; font-weight: 600; color: #6b6860; border-bottom: 2px solid #e2dfd8; white-space: nowrap; }
-.smg-tbl th:first-child { text-align: left; }
-.smg-tbl td { padding: 8px 10px; border-bottom: 1px solid #f7f6f2; text-align: right; white-space: nowrap; }
-.smg-tbl td:first-child { text-align: left; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-.smg-tbl tr:hover td { background: #f7f6f2; }
-.smg-tp { font-family: 'Noto Serif KR', serif; font-weight: 700; color: #2d5016; }
-.smg-te { color: #9c9a95; }
-.smg-terr { color: #8b2020; font-size: 11px; }
-.smg-cpos { color: #c0392b; font-size: 11px; }
-.smg-cneg { color: #27ae60; font-size: 11px; }
-.smg-czro { color: #9c9a95; font-size: 11px; }
-
-/* 차트 */
-.smg-chwrap { position: relative; height: 300px; margin-top: 4px; }
-
-/* 안내 */
-.smg-hint { font-size: 11.5px; color: #9c9a95; line-height: 1.6; margin-top: 6px; }
-.smg-hint b { color: #6b6860; font-weight: 500; }
-.smg-divider { height: 1px; background: #e2dfd8; margin: 12px 0; }
-.smg-ssub { font-size: 11.5px; font-weight: 600; color: #6b6860; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
-.smg-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #eef4e8; color: #2d5016; border: 1px solid #c5dbb0; }
-.smg-warn { font-size: 12px; color: #7c5c00; background: #fdf6e0; border: 1px solid #e8d490; border-radius: 5px; padding: 8px 12px; margin-bottom: 12px; line-height: 1.6; }
-.smg-result-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:232px;flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;padding:26px 0 0;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb-brand{padding:0 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-brand h1{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;margin:0 0 3px;color:#fff;letter-spacing:-.3px}
+.sb-brand p{font-size:11px;color:#9c9a95;margin:0}
+.sb-nav{padding:12px 10px;flex:1}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:5px;font-size:13px;color:#c0bdb6;cursor:pointer;transition:background .15s,color .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.nav-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-btn.on{background:rgba(255,255,255,.13);color:#fff;font-weight:500}
+.sb-foot{padding:14px 20px;font-size:11px;color:#6b6860;border-top:1px solid rgba(255,255,255,.08);line-height:1.6}
+.main{margin-left:232px;flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 26px;height:50px;display:flex;align-items:center;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;flex:1}
+.content{padding:22px 26px 60px;max-width:900px}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px;overflow:hidden}
+.card-head{padding:11px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fafaf8}
+.card-head h2{font-size:13px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px}
+.step{background:var(--green);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.card-body{padding:16px 18px}
+label{display:block;font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:4px}
+input[type=text],input[type=password],select{font-family:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--border-s);border-radius:5px;background:#fff;color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:none;border-color:var(--greenm);box-shadow:0 0 0 3px rgba(74,124,47,.12)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}.sidebar{display:none}.main{margin-left:0}}
+.btn{font-family:inherit;font-size:13px;font-weight:500;padding:7px 14px;border-radius:5px;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.btn:active{transform:translateY(1px)}
+.bp{background:var(--green);color:#fff}.bp:hover{background:var(--greenm)}
+.bg{background:transparent;color:var(--ink);border:1px solid var(--border-s)}.bg:hover{background:var(--bg)}
+.bsm{font-size:12px;padding:5px 10px}
+.bico{background:none;border:none;cursor:pointer;color:var(--ink3);padding:3px 5px;border-radius:3px;font-size:14px;font-family:inherit}.bico:hover{color:var(--red);background:var(--redl)}
+.blg{font-size:14px;padding:10px 0;font-weight:600;width:100%;justify-content:center}
+.toggle{display:flex;gap:3px;background:var(--bg);border:1px solid var(--border-s);border-radius:6px;padding:3px}
+.tog-btn{font-family:inherit;font-size:12px;font-weight:500;padding:3px 12px;border-radius:4px;border:none;cursor:pointer;color:var(--ink2);background:transparent;transition:all .15s}
+.tog-btn.on{background:#fff;color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.srow{display:flex;gap:7px;position:relative}
+.iwrap{flex:1;position:relative}
+.sugg{position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:200;background:#fff;border:1px solid var(--greenm);border-radius:5px;list-style:none;margin:0;padding:4px 0;max-height:220px;overflow:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.sugg li{padding:8px 13px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bg)}.sugg li:hover{background:var(--greenl)}
+.sugg li.hint{color:var(--ink3);cursor:default;font-size:12px}.sugg li.hint:hover{background:none}
+.chips{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+.chip{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:13px}
+.chip-n{font-size:11px;font-weight:600;color:var(--ink3);min-width:16px}
+.chip-t{flex:1}
+.acnt{font-size:12px;color:var(--ink3);margin-top:7px}
+.yrrow{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.yrgrp{display:flex;align-items:center;gap:7px;flex:1;min-width:200px}
+.yrgrp select{max-width:115px}
+.yrsep{color:var(--ink3);font-size:14px}
+.qbtns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+.prog{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 18px;margin-bottom:14px;display:none}
+.prog-lbl{font-size:12px;color:var(--ink2);margin-bottom:6px;display:flex;justify-content:space-between}
+.prog-out{height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.prog-in{height:100%;background:var(--greenm);border-radius:999px;transition:width .3s;width:0%}
+.rtabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:14px}
+.rtab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink3);cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;transition:color .15s}
+.rtab.on{color:var(--green);border-bottom-color:var(--green)}
+.rtab:hover{color:var(--ink)}
+.tpanel{display:none}.tpanel.on{display:block}
+.twrap{overflow-x:auto}
+.rtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.rtbl th{text-align:right;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--ink2);border-bottom:2px solid var(--border);white-space:nowrap}
+.rtbl th:first-child{text-align:left}
+.rtbl td{padding:8px 10px;border-bottom:1px solid var(--bg);text-align:right;white-space:nowrap}
+.rtbl td:first-child{text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.rtbl tr:hover td{background:var(--bg)}
+.tp{font-family:'Noto Serif KR',serif;font-weight:700;color:var(--green)}
+.te{color:var(--ink3)}.terr{color:var(--red);font-size:11px}
+.cpos{color:#c0392b;font-size:11px}.cneg{color:#27ae60;font-size:11px}.czro{color:var(--ink3);font-size:11px}
+.chwrap{position:relative;height:320px;margin-top:4px}
+.divider{height:1px;background:var(--border);margin:13px 0}
+.hint{font-size:11.5px;color:var(--ink3);line-height:1.6;margin-top:6px}
+.hint b{color:var(--ink2);font-weight:500}
+.ssub{font-size:11.5px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px}
+.tg{background:var(--greenl);color:var(--green);border:1px solid #c5dbb0}
+.ta{background:var(--amberl);color:var(--amber);border:1px solid #e8d490}
+.estt{text-align:center;padding:26px;color:var(--ink3);font-size:13px}
+.sess-list{list-style:none;margin:0;padding:0}
+.sess-item{border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:7px;cursor:pointer;background:#fff;transition:border-color .15s}
+.sess-item:hover{border-color:var(--greenm);box-shadow:0 2px 8px rgba(74,124,47,.1)}
+.sess-meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2)}
+.sess-yr{font-size:11px;font-weight:600;background:var(--amberl);color:var(--amber);padding:2px 7px;border-radius:999px;border:1px solid #e8d490}
+.sess-prev{font-size:12.5px;color:var(--ink);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
-<div class="smg-widget" id="smg-root">
+<div class="layout">
 
-  <p class="smg-title">📍 개별공시지가 조회</p>
-  <p class="smg-subtitle">VWorld API 기반 · 주소로 연도별 공시지가를 한번에 조회합니다</p>
+<aside class="sidebar">
+  <div class="sb-brand">
+    <h1>개별공시지가 조회</h1>
+    <p>VWorld API 기반</p>
+  </div>
+  <nav class="sb-nav">
+    <button class="nav-btn on" onclick="goPanel('search',this)">🔍 주소 조회</button>
+    <button class="nav-btn" onclick="goPanel('history',this)">🕘 조회 이력</button>
+  </nav>
+  <div class="sb-foot">
+    인증키는 Cloudflare Worker에서만 처리됩니다
+  </div>
+</aside>
 
-  <div class="smg-warn">
-    ⚠️ 이 도구는 <a href="https://www.vworld.kr" target="_blank" rel="noopener">VWorld</a> 인증키가 필요합니다.
-    <a href="https://www.vworld.kr/dev/v4dv_apikeylist_s002.do" target="_blank" rel="noopener">무료 발급 →</a>
-    발급 시 도메인에 이 블로그 주소를 등록하세요.
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">주소 조회</div>
   </div>
 
-  <!-- 1. 인증키 -->
-  <div class="smg-card">
-    <div class="smg-card-head">
-      <h3><span class="smg-step">1</span> VWorld 인증키</h3>
-    </div>
-    <div class="smg-card-body">
-      <div class="smg-grid2">
-        <div>
-          <label class="smg-label">인증키</label>
-          <input class="smg-input" id="smg-key" type="password" placeholder="예) 5EFC480E-69E8-…">
-        </div>
-        <div>
-          <label class="smg-label">등록 도메인 <span style="font-weight:300">(선택)</span></label>
-          <input class="smg-input" id="smg-domain" type="text" placeholder="예) semogle.com">
-        </div>
-      </div>
-      <div class="smg-hint" style="margin-top:8px">인증키는 이 페이지에서만 사용되며 서버로 전송되지 않습니다.</div>
-    </div>
-  </div>
+  <div class="content">
 
-  <!-- 2. 주소 -->
-  <div class="smg-card">
-    <div class="smg-card-head">
-      <h3><span class="smg-step">2</span> 조회할 주소</h3>
-      <button class="smg-btn smg-btn-ghost smg-btn-sm" id="smg-clear-btn" onclick="smgClearAddrs()" style="display:none">전체 삭제</button>
-    </div>
-    <div class="smg-card-body">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label class="smg-label" style="margin:0">주소 검색</label>
-        <div class="smg-toggle">
-          <button class="smg-tog-btn on" onclick="smgSetMode('parcel',this)">지번</button>
-          <button class="smg-tog-btn" onclick="smgSetMode('road',this)">도로명</button>
-        </div>
-      </div>
-      <div class="smg-srow">
-        <div class="smg-iwrap">
-          <input class="smg-input" id="smg-addr-input" type="text" autocomplete="off"
-                 placeholder="예) 서울특별시 광진구 자양동 787"
-                 oninput="smgOnInput()"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();smgAddAddr();}">
-          <ul id="smg-sugg" class="smg-sugg"></ul>
-        </div>
-        <button class="smg-btn smg-btn-ghost" onclick="smgAddAddr()">직접 추가</button>
-      </div>
-      <div class="smg-hint" id="smg-mode-hint">지번 주소 기준. 번지까지 입력 후 <b>후보 클릭</b>으로 추가. 인증키 필요.</div>
-      <ul id="smg-chips" class="smg-chips"></ul>
-      <div class="smg-addr-cnt" id="smg-addr-cnt">추가된 주소: 0건</div>
-    </div>
-  </div>
+    <!-- 조회 패널 -->
+    <div class="panel on" id="panel-search">
 
-  <!-- 3. 기간 -->
-  <div class="smg-card">
-    <div class="smg-card-head">
-      <h3><span class="smg-step">3</span> 조회 기간</h3>
-    </div>
-    <div class="smg-card-body">
-      <div class="smg-yrrow">
-        <div class="smg-yrgrp">
-          <div style="flex:1"><label class="smg-label">시작 연도</label><select class="smg-input" id="smg-yf"></select></div>
-          <span class="smg-yrsep">~</span>
-          <div style="flex:1"><label class="smg-label">종료 연도</label><select class="smg-input" id="smg-yt"></select></div>
+      <div class="card">
+        <div class="card-head"><h2><span class="step">1</span> 조회할 주소</h2>
+          <button class="btn bg bsm" id="clear-btn" onclick="clearAddrs()" style="display:none">전체 삭제</button>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;min-width:170px">
-          <div class="smg-qbtns">
-            <button class="smg-btn smg-btn-ghost smg-btn-sm" onclick="smgSetRange(3)">3년</button>
-            <button class="smg-btn smg-btn-ghost smg-btn-sm" onclick="smgSetRange(5)">5년</button>
-            <button class="smg-btn smg-btn-ghost smg-btn-sm" onclick="smgSetRange(10)">10년</button>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <label style="margin:0">주소 검색</label>
+            <div class="toggle">
+              <button class="tog-btn on" onclick="setMode('parcel',this)">지번</button>
+              <button class="tog-btn" onclick="setMode('road',this)">도로명</button>
+            </div>
           </div>
-          <button class="smg-btn smg-btn-primary smg-btn-full" onclick="smgRun()">▶ 조회 시작</button>
+          <div class="srow">
+            <div class="iwrap">
+              <input id="addr-input" type="text" autocomplete="off"
+                     placeholder="예) 서울특별시 광진구 자양동 787"
+                     oninput="onAddrInput()"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();addAddr();}">
+              <ul id="suggest" class="sugg"></ul>
+            </div>
+            <button class="btn bg" onclick="addAddr()">직접 추가</button>
+          </div>
+          <div class="hint" id="mode-hint">지번 주소 기준. 번지까지 입력 후 <b>후보 클릭</b>으로 추가.</div>
+          <ul id="addr-list" class="chips"></ul>
+          <div class="acnt" id="addr-cnt">추가된 주소: 0건</div>
         </div>
       </div>
-      <div class="smg-hint" id="smg-range-hint"></div>
-    </div>
-  </div>
 
-  <!-- 프로그레스 -->
-  <div class="smg-prog" id="smg-prog">
-    <div class="smg-prog-lbl">
-      <span id="smg-prog-txt">조회 준비 중…</span>
-      <span id="smg-prog-pct">0%</span>
-    </div>
-    <div class="smg-prog-out"><div class="smg-prog-in" id="smg-prog-bar"></div></div>
-  </div>
-
-  <!-- 결과 -->
-  <div class="smg-card" id="smg-result" style="display:none">
-    <div class="smg-card-head">
-      <h3>조회 결과</h3>
-      <div style="display:flex;gap:7px;align-items:center">
-        <span class="smg-tag" id="smg-badge"></span>
-        <button class="smg-btn smg-btn-ghost smg-btn-sm" onclick="smgCSV()">⬇ CSV</button>
-      </div>
-    </div>
-    <div class="smg-card-body">
-      <div class="smg-rtabs">
-        <button class="smg-rtab on" onclick="smgTab('table',this)">📋 표</button>
-        <button class="smg-rtab" onclick="smgTab('chart',this)">📈 그래프</button>
-      </div>
-      <div class="smg-tpanel on" id="smg-tp-table">
-        <div class="smg-twrap">
-          <table class="smg-tbl">
-            <thead id="smg-thead"></thead>
-            <tbody id="smg-tbody"></tbody>
-          </table>
+      <div class="card">
+        <div class="card-head"><h2><span class="step">2</span> 조회 기간</h2></div>
+        <div class="card-body">
+          <div class="yrrow">
+            <div class="yrgrp">
+              <div style="flex:1"><label>시작 연도</label><select id="yf"></select></div>
+              <span class="yrsep">~</span>
+              <div style="flex:1"><label>종료 연도</label><select id="yt"></select></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;min-width:170px">
+              <div class="qbtns">
+                <button class="btn bg bsm" onclick="setRange(3)">3년</button>
+                <button class="btn bg bsm" onclick="setRange(5)">5년</button>
+                <button class="btn bg bsm" onclick="setRange(10)">10년</button>
+              </div>
+              <button class="btn bp blg" onclick="runQuery()">▶ 조회 시작</button>
+            </div>
+          </div>
+          <div class="hint" id="range-hint"></div>
         </div>
       </div>
-      <div class="smg-tpanel" id="smg-tp-chart">
-        <div class="smg-chwrap"><canvas id="smg-chart"></canvas></div>
+
+      <div class="prog" id="prog">
+        <div class="prog-lbl"><span id="prog-txt">조회 준비 중…</span><span id="prog-pct">0%</span></div>
+        <div class="prog-out"><div class="prog-in" id="prog-bar"></div></div>
+      </div>
+
+      <div class="card" id="result-card" style="display:none">
+        <div class="card-head">
+          <h2>조회 결과</h2>
+          <div style="display:flex;gap:7px;align-items:center">
+            <span class="tag tg" id="result-badge"></span>
+            <button class="btn bg bsm" onclick="dlCSV()">⬇ CSV</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="rtabs">
+            <button class="rtab on" onclick="switchTab('table',this)">📋 표</button>
+            <button class="rtab" onclick="switchTab('chart',this)">📈 그래프</button>
+          </div>
+          <div class="tpanel on" id="tp-table">
+            <div class="twrap"><table class="rtbl"><thead id="rthead"></thead><tbody id="rtbody"></tbody></table></div>
+          </div>
+          <div class="tpanel" id="tp-chart">
+            <div class="chwrap"><canvas id="myChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 이력 패널 -->
+    <div class="panel" id="panel-history">
+      <div class="card">
+        <div class="card-head"><h2>조회 이력</h2><span class="tag ta" id="hist-cnt"></span></div>
+        <div class="card-body">
+          <ul id="sess-list" class="sess-list"></ul>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 면책 -->
-  <div class="smg-hint" style="margin-top:8px;border-top:1px solid #e2dfd8;padding-top:10px">
-    본 조회 결과는 국토교통부 VWorld API 데이터를 기반으로 하며, 참고용으로만 활용하시기 바랍니다.
-    공식 자료는 <a href="https://www.realtyprice.kr" target="_blank" rel="noopener">부동산공시가격알리미</a>에서 확인하세요.
   </div>
+</div>
 </div>
 
 <script>
-(function() {
-  // ── 상수 ──
-  const GEO_URL   = 'https://api.vworld.kr/req/address';
-  const FEAT_URL  = 'https://api.vworld.kr/req/data';
-  const PRICE_URL = 'https://api.vworld.kr/ned/data/getIndvdLandPriceAttr';
-  const SRCH_URL  = 'https://api.vworld.kr/req/search';
-  const SIDO = {
-    '서울':'서울특별시','부산':'부산광역시','대구':'대구광역시','인천':'인천광역시',
-    '광주':'광주광역시','대전':'대전광역시','울산':'울산광역시','세종':'세종특별자치시',
-    '경기':'경기도','강원':'강원특별자치도','충북':'충청북도','충남':'충청남도',
-    '전북':'전북특별자치도','전남':'전라남도','경북':'경상북도','경남':'경상남도','제주':'제주특별자치도'
-  };
-  const COLORS = ['#2d5016','#4a7c2f','#c0a020','#a05020','#8b2020','#2060a0','#604080','#206080','#20806c','#7c5c00'];
+// ── Worker URL (배포 후 실제 URL로 변경) ──
+const WORKER = 'https://your-worker.your-subdomain.workers.dev';
 
-  // ── 상태 ──
-  let addrs = [], mode = 'parcel', lastData = null, chartInst = null;
+const SIDO = {
+  '서울':'서울특별시','부산':'부산광역시','대구':'대구광역시','인천':'인천광역시',
+  '광주':'광주광역시','대전':'대전광역시','울산':'울산광역시','세종':'세종특별자치시',
+  '경기':'경기도','강원':'강원특별자치도','충북':'충청북도','충남':'충청남도',
+  '전북':'전북특별자치도','전남':'전라남도','경북':'경상북도','경남':'경상남도','제주':'제주특별자치도'
+};
+const COLORS = ['#2d5016','#4a7c2f','#c0a020','#a05020','#8b2020','#2060a0','#604080','#206080','#20806c','#7c5c00'];
 
-  // ── 연도 드롭다운 초기화 ──
-  const now = new Date().getFullYear();
-  ['smg-yf','smg-yt'].forEach(id => {
-    const sel = document.getElementById(id);
-    for (let y = now; y >= now-20; y--) {
-      const o = document.createElement('option');
-      o.value = y; o.textContent = y + '년'; sel.appendChild(o);
-    }
+let addrs = [], addrMode = 'parcel', lastData = null, chartInst = null;
+const history = [];
+
+// ── 연도 드롭다운 ──
+const now = new Date().getFullYear();
+['yf','yt'].forEach(id => {
+  const sel = document.getElementById(id);
+  for (let y = now; y >= now-20; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y+'년'; sel.appendChild(o);
+  }
+});
+document.getElementById('yf').value = now-4;
+document.getElementById('yt').value = now;
+updRangeHint();
+document.getElementById('yf').addEventListener('change', updRangeHint);
+document.getElementById('yt').addEventListener('change', updRangeHint);
+
+function updRangeHint() {
+  const f = +document.getElementById('yf').value;
+  const t = +document.getElementById('yt').value;
+  const n = Math.max(0, t-f+1);
+  document.getElementById('range-hint').textContent =
+    n > 0 ? `총 ${n}개 연도 · 주소 수 × ${n}회 API 호출` : '';
+}
+function setRange(n) {
+  document.getElementById('yf').value = now-n+1;
+  document.getElementById('yt').value = now;
+  updRangeHint();
+}
+
+// ── 패널 전환 ──
+function goPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  btn.classList.add('on');
+  document.getElementById('topbar-title').textContent = name==='search' ? '주소 조회' : '조회 이력';
+  if (name === 'history') renderHistory();
+}
+
+// ── 주소 모드 ──
+function setMode(m, btn) {
+  addrMode = m;
+  document.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  const inp = document.getElementById('addr-input');
+  const hint = document.getElementById('mode-hint');
+  if (m === 'parcel') {
+    inp.placeholder = '예) 서울특별시 광진구 자양동 787';
+    hint.innerHTML = '지번 주소 기준. 번지까지 입력 후 <b>후보 클릭</b>으로 추가.';
+  } else {
+    inp.placeholder = '예) 서울특별시 광진구 능동로 209';
+    hint.innerHTML = '도로명 주소 기준. 건물번호까지 입력 후 <b>후보 클릭</b>으로 추가.';
+  }
+  inp.value = ''; hideSugg();
+}
+
+// ── 주소 목록 ──
+function renderList() {
+  const ul = document.getElementById('addr-list'); ul.innerHTML = '';
+  addrs.forEach((a, i) => {
+    const li = document.createElement('li'); li.className = 'chip';
+    li.innerHTML = `<span class="chip-n">${i+1}</span><span class="chip-t">${a}</span>
+      <button class="bico" onclick="removeAddr(${i})">✕</button>`;
+    ul.appendChild(li);
   });
-  document.getElementById('smg-yf').value = now - 4;
-  document.getElementById('smg-yt').value = now;
-  updHint();
+  document.getElementById('addr-cnt').textContent = '추가된 주소: '+addrs.length+'건';
+  document.getElementById('clear-btn').style.display = addrs.length>1 ? 'inline-flex':'none';
+}
+function addAddr() {
+  const inp = document.getElementById('addr-input');
+  const v = inp.value.trim(); hideSugg();
+  if (!v || addrs.includes(v)) { inp.value=''; return; }
+  addrs.push(v); inp.value=''; renderList();
+}
+function removeAddr(i) { addrs.splice(i,1); renderList(); }
+function clearAddrs() { addrs=[]; renderList(); }
 
-  function updHint() {
-    const f = +document.getElementById('smg-yf').value;
-    const t = +document.getElementById('smg-yt').value;
-    const n = Math.max(0, t - f + 1);
-    document.getElementById('smg-range-hint').textContent =
-      n > 0 ? `총 ${n}개 연도 · 주소 수 × ${n}회 API 호출` : '';
-  }
-  document.getElementById('smg-yf').addEventListener('change', updHint);
-  document.getElementById('smg-yt').addEventListener('change', updHint);
+// ── 자동완성 ──
+let stimer = null;
+function onAddrInput() {
+  const q = document.getElementById('addr-input').value.trim();
+  clearTimeout(stimer);
+  if (q.length < 2) { hideSugg(); return; }
+  stimer = setTimeout(() => fetchSugg(q), 400);
+}
+async function fetchSugg(q) {
+  const parts = q.split(' ');
+  if (parts[0] && SIDO[parts[0]]) q = [SIDO[parts[0]],...parts.slice(1)].join(' ');
 
-  window.smgSetRange = function(n) {
-    document.getElementById('smg-yf').value = now - n + 1;
-    document.getElementById('smg-yt').value = now;
-    updHint();
-  };
+  const params = new URLSearchParams({
+    type:'search', service:'search', request:'search', version:'2.0',
+    query:q, 'type_':'address', category: addrMode==='road' ? 'road':'parcel',
+    size:'10', page:'1'
+  });
+  // type 파라미터가 worker 라우팅용이라 별도 처리
+  const workerParams = new URLSearchParams({
+    type:'search', service:'search', request:'search', version:'2.0',
+    query:q, category: addrMode==='road' ? 'road':'parcel',
+    size:'10', page:'1'
+  });
 
-  // ── 주소 모드 ──
-  window.smgSetMode = function(m, btn) {
-    mode = m;
-    document.querySelectorAll('.smg-tog-btn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    const inp = document.getElementById('smg-addr-input');
-    const hint = document.getElementById('smg-mode-hint');
-    if (m === 'parcel') {
-      inp.placeholder = '예) 서울특별시 광진구 자양동 787';
-      hint.innerHTML = '지번 주소 기준. 번지까지 입력 후 <b>후보 클릭</b>으로 추가. 인증키 필요.';
-    } else {
-      inp.placeholder = '예) 서울특별시 광진구 능동로 209';
-      hint.innerHTML = '도로명 주소 기준. 건물번호까지 입력 후 <b>후보 클릭</b>으로 추가. 인증키 필요.';
-    }
-    inp.value = ''; hideSugg();
-  };
-
-  // ── 주소 목록 ──
-  function renderList() {
-    const ul = document.getElementById('smg-chips'); ul.innerHTML = '';
-    addrs.forEach((a, i) => {
-      const li = document.createElement('li'); li.className = 'smg-chip';
-      li.innerHTML = `<span class="smg-chip-n">${i+1}</span>
-        <span class="smg-chip-t">${a}</span>
-        <button class="smg-btn-icon" onclick="smgDel(${i})">✕</button>`;
-      ul.appendChild(li);
-    });
-    document.getElementById('smg-addr-cnt').textContent = '추가된 주소: ' + addrs.length + '건';
-    document.getElementById('smg-clear-btn').style.display = addrs.length > 1 ? 'inline-flex' : 'none';
-  }
-  window.smgAddAddr = function() {
-    const inp = document.getElementById('smg-addr-input');
-    const v = inp.value.trim(); hideSugg();
-    if (!v || addrs.includes(v)) { inp.value = ''; return; }
-    addrs.push(v); inp.value = ''; renderList();
-  };
-  window.smgDel = function(i) { addrs.splice(i,1); renderList(); };
-  window.smgClearAddrs = function() { addrs = []; renderList(); };
-
-  // ── 자동완성 ──
-  let stimer = null;
-  window.smgOnInput = function() {
-    const q = document.getElementById('smg-addr-input').value.trim();
-    clearTimeout(stimer);
-    if (q.length < 2) { hideSugg(); return; }
-    stimer = setTimeout(() => fetchSugg(q), 400);
-  };
-
-  async function fetchSugg(q) {
-    const key = document.getElementById('smg-key').value.trim();
-    const domain = document.getElementById('smg-domain').value.trim();
-    if (!key) { showSuggMsg('먼저 인증키를 입력하세요'); return; }
-
-    // 시도 줄임말 변환
-    const parts = q.split(' ');
-    if (parts[0] && SIDO[parts[0]]) q = [SIDO[parts[0]], ...parts.slice(1)].join(' ');
-
-    const categories = mode === 'road' ? ['road'] : ['parcel'];
+  try {
+    const r = await fetch(WORKER+'?'+workerParams);
+    const d = await r.json();
+    const items = d?.response?.result?.items || [];
     const out = [];
-    for (const cat of categories) {
-      const p = new URLSearchParams({
-        service:'search', request:'search', version:'2.0',
-        query:q, type:'address', category:cat,
-        format:'json', size:'10', page:'1', key:key
-      });
-      if (domain) p.set('domain', domain);
+    items.forEach(it => {
+      const title = it.title || (addrMode==='road' ? it.address?.road : it.address?.parcel);
+      if (title && !out.includes(title)) out.push(title);
+    });
+    renderSugg(out.slice(0,10));
+  } catch(e) { showSuggMsg('자동완성 오류 — Worker URL을 확인하세요'); }
+}
+function renderSugg(items) {
+  const ul = document.getElementById('suggest'); ul.innerHTML='';
+  if (!items.length) { showSuggMsg('일치하는 주소 없음 — 더 자세히 입력해 보세요'); return; }
+  items.forEach(t => {
+    const li = document.createElement('li'); li.textContent=t;
+    li.onclick=()=>{ if(!addrs.includes(t)){addrs.push(t);renderList();} document.getElementById('addr-input').value=''; hideSugg(); };
+    ul.appendChild(li);
+  });
+  ul.style.display='block';
+}
+function showSuggMsg(msg) {
+  const ul = document.getElementById('suggest');
+  ul.innerHTML=`<li class="hint">${msg}</li>`; ul.style.display='block';
+}
+function hideSugg() {
+  const ul = document.getElementById('suggest'); ul.style.display='none'; ul.innerHTML='';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#addr-input') && !e.target.closest('#suggest')) hideSugg();
+});
+
+// ── API 호출 (모두 Worker 경유) ──
+async function api(type, params) {
+  const p = new URLSearchParams({ type, ...params });
+  const r = await fetch(WORKER+'?'+p);
+  return r.json();
+}
+
+async function geocode(addr) {
+  const parts = addr.split(' ');
+  const cands = [];
+  if (parts[0] && SIDO[parts[0]]) cands.push([SIDO[parts[0]],...parts.slice(1)].join(' '));
+  cands.push(addr);
+  const types = addrMode==='road' ? ['road','parcel'] : ['parcel','road'];
+  for (const type of types) {
+    for (const cand of cands) {
       try {
-        const r = await fetch(SRCH_URL + '?' + p);
-        const d = await r.json();
-        const items = d?.response?.result?.items || [];
-        items.forEach(it => {
-          const title = it.title || (cat === 'parcel' ? it.address?.parcel : it.address?.road);
-          if (title && !out.includes(title)) out.push(title);
-        });
+        const d = await api('geocode', { service:'address', request:'getcoord', version:'2.0', crs:'epsg:4326', address:cand, type });
+        if (d?.response?.status==='OK') {
+          const pt = d.response.result.point;
+          return { x:pt.x, y:pt.y, err:null };
+        }
       } catch(e) {}
     }
-    renderSugg(out.slice(0,10));
   }
+  return { x:null, y:null, err:'주소를 찾을 수 없음' };
+}
 
-  function renderSugg(items) {
-    const ul = document.getElementById('smg-sugg'); ul.innerHTML = '';
-    if (!items.length) { showSuggMsg('일치하는 주소 없음 — 더 자세히 입력해 보세요'); return; }
-    items.forEach(t => {
-      const li = document.createElement('li'); li.textContent = t;
-      li.onclick = () => {
-        if (!addrs.includes(t)) { addrs.push(t); renderList(); }
-        document.getElementById('smg-addr-input').value = ''; hideSugg();
-      };
-      ul.appendChild(li);
+async function getPNU(x, y) {
+  try {
+    const d = await api('feature', {
+      service:'data', request:'GetFeature', data:'LP_PA_CBND_BUBUN',
+      format:'json', geomFilter:`POINT(${x} ${y})`, crs:'EPSG:4326', geometry:'false', size:'1'
     });
-    ul.style.display = 'block';
+    const features = d?.response?.result?.featureCollection?.features || [];
+    if (!features.length) return { pnu:null, err:'해당 좌표에 필지 없음' };
+    const pnu = features[0].properties?.pnu || features[0].properties?.PNU;
+    return pnu ? { pnu, err:null } : { pnu:null, err:'PNU 없음' };
+  } catch(e) { return { pnu:null, err:'지적도 오류' }; }
+}
+
+async function getPrice(pnu, year) {
+  try {
+    const d = await api('price', { pnu, stdrYear:String(year), numOfRows:'10', pageNo:'1' });
+    let field = d?.indvdLandPrices?.field;
+    if (!field) return '';
+    if (!Array.isArray(field)) field=[field];
+    if (!field.length) return '';
+    return field[0].pblntfPclnd || field[0].individualLandPrice || field[0].ladpcl || '';
+  } catch(e) { return ''; }
+}
+
+async function lookupOne(addr, year) {
+  const { x, y, err } = await geocode(addr);
+  if (err) return { price:'', note:err, pnu:'' };
+  const { pnu, err:e2 } = await getPNU(x, y);
+  if (e2) return { price:'', note:e2, pnu:'' };
+  const price = await getPrice(pnu, year);
+  return { price, note: price?'':'공시지가 미확인', pnu };
+}
+
+// ── 조회 실행 ──
+async function runQuery() {
+  if (!addrs.length) { alert('조회할 주소를 추가하세요.'); return; }
+  const yf = +document.getElementById('yf').value;
+  const yt = +document.getElementById('yt').value;
+  if (yf > yt) { alert('시작 연도가 종료 연도보다 클 수 없습니다.'); return; }
+
+  const years = [];
+  for (let y=yf; y<=yt; y++) years.push(y);
+  const total = addrs.length * years.length;
+
+  const pg = document.getElementById('prog'); pg.style.display='block';
+  document.getElementById('result-card').style.display='none';
+  setProg(0, total);
+
+  const rows = {};
+  let done = 0;
+  for (const addr of addrs) {
+    rows[addr] = {};
+    for (const yr of years) {
+      rows[addr][yr] = await lookupOne(addr, yr);
+      done++; setProg(done, total);
+      await new Promise(r=>setTimeout(r,150));
+    }
   }
-  function showSuggMsg(msg) {
-    const ul = document.getElementById('smg-sugg');
-    ul.innerHTML = `<li class="smg-hint">${msg}</li>`; ul.style.display = 'block';
-  }
-  function hideSugg() {
-    const ul = document.getElementById('smg-sugg'); ul.style.display = 'none'; ul.innerHTML = '';
-  }
-  document.addEventListener('click', e => {
-    if (!e.target.closest('#smg-addr-input') && !e.target.closest('#smg-sugg')) hideSugg();
+  setTimeout(()=>{ pg.style.display='none'; }, 400);
+
+  lastData = { years, rows };
+
+  // 이력 저장
+  history.unshift({
+    ts: new Date().toLocaleString('ko-KR'),
+    range: `${yf}~${yt}`,
+    addrs: [...addrs],
+    data: lastData
+  });
+  if (history.length > 20) history.pop();
+
+  renderResults(lastData);
+}
+
+function setProg(done, total) {
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('prog-txt').textContent = done<total ? `조회 중… ${done}/${total}건`:`완료 (${total}건)`;
+  document.getElementById('prog-pct').textContent = pct+'%';
+  document.getElementById('prog-bar').style.width = pct+'%';
+}
+
+// ── 결과 렌더 ──
+function renderResults(d) {
+  const { years, rows } = d;
+  const as = Object.keys(rows);
+  document.getElementById('result-badge').textContent = years[0]+'~'+years[years.length-1]+'년 ('+years.length+'개 연도)';
+
+  let hrow='<tr><th>주소</th>';
+  years.forEach(y=>{ hrow+=`<th>${y}</th>`; });
+  hrow+='<th>변동률</th></tr>';
+  document.getElementById('rthead').innerHTML=hrow;
+
+  const tbody=document.getElementById('rtbody'); tbody.innerHTML='';
+  as.forEach(addr=>{
+    const tr=document.createElement('tr');
+    let cells=`<td title="${addr}">${addr.length>24?addr.slice(0,22)+'…':addr}</td>`;
+    const prices=years.map(y=>{ const p=rows[addr][y]?.price; return p?parseInt(p):null; });
+    prices.forEach((p,i)=>{
+      if(p===null){ const note=rows[addr][years[i]]?.note||'—'; cells+=`<td class="terr" title="${note}">—</td>`; }
+      else cells+=`<td class="tp">${p.toLocaleString('ko-KR')}</td>`;
+    });
+    const valid=prices.filter(p=>p!==null);
+    if(valid.length>=2){
+      const chg=((valid[valid.length-1]-valid[0])/valid[0]*100).toFixed(1);
+      const cls=+chg>0?'cpos':+chg<0?'cneg':'czro';
+      cells+=`<td class="${cls}">${+chg>0?'+':''}${chg}%</td>`;
+    } else cells+='<td class="te">—</td>';
+    tr.innerHTML=cells; tbody.appendChild(tr);
   });
 
-  // ── API 호출 헬퍼 ──
-  async function geocode(addr, key, domain) {
-    const types = mode === 'road' ? ['road','parcel'] : ['parcel','road'];
-    const parts = addr.split(' ');
-    const cands = [];
-    if (parts[0] && SIDO[parts[0]]) cands.push([SIDO[parts[0]], ...parts.slice(1)].join(' '));
-    cands.push(addr);
+  document.getElementById('result-card').style.display='block';
+  document.getElementById('result-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
 
-    for (const type of types) {
-      for (const cand of cands) {
-        const p = new URLSearchParams({
-          service:'address', request:'getcoord', version:'2.0',
-          crs:'epsg:4326', address:cand, format:'json', type, key
-        });
-        if (domain) p.set('domain', domain);
-        try {
-          const r = await fetch(GEO_URL + '?' + p);
-          const d = await r.json();
-          if (d?.response?.status === 'OK') {
-            const pt = d.response.result.point;
-            return { x: pt.x, y: pt.y, err: null };
-          }
-        } catch(e) {}
+// ── 탭 ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tp-'+name).classList.add('on');
+  btn.classList.add('on');
+  if (name==='chart'&&lastData) drawChart(lastData);
+}
+function drawChart(d) {
+  const { years, rows } = d;
+  const as = Object.keys(rows);
+  if (chartInst) { chartInst.destroy(); chartInst=null; }
+  const datasets = as.map((addr,i)=>({
+    label: addr.length>16?addr.slice(0,14)+'…':addr,
+    data: years.map(y=>{ const p=rows[addr][y]?.price; return p?parseInt(p):null; }),
+    borderColor:COLORS[i%COLORS.length], backgroundColor:COLORS[i%COLORS.length]+'22',
+    borderWidth:2.5, pointRadius:4, pointHoverRadius:6, tension:0.3, spanGaps:true,
+  }));
+  const ctx=document.getElementById('myChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'line', data:{labels:years.map(y=>y+'년'),datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{family:'Pretendard',size:12},padding:14}},
+        tooltip:{callbacks:{label:c=>c.raw?` ${c.dataset.label}: ${c.raw.toLocaleString('ko-KR')} 원/㎡`:` ${c.dataset.label}: 데이터 없음`}}
+      },
+      scales:{
+        x:{grid:{color:'#e2dfd8'},ticks:{font:{family:'Pretendard',size:11}}},
+        y:{grid:{color:'#e2dfd8'},ticks:{font:{family:'Pretendard',size:11},callback:v=>v.toLocaleString('ko-KR')}}
       }
     }
-    return { x:null, y:null, err:'주소를 찾을 수 없음 — 지번/도로명 표기 확인 필요' };
-  }
+  });
+}
 
-  async function getPNU(x, y, key, domain) {
-    const p = new URLSearchParams({
-      service:'data', request:'GetFeature', data:'LP_PA_CBND_BUBUN',
-      key, format:'json', geomFilter:`POINT(${x} ${y})`,
-      crs:'EPSG:4326', geometry:'false', size:'1'
-    });
-    if (domain) p.set('domain', domain);
-    try {
-      const r = await fetch(FEAT_URL + '?' + p);
-      const d = await r.json();
-      const features = d?.response?.result?.featureCollection?.features || [];
-      if (!features.length) return { pnu:null, err:'해당 좌표에 필지 없음' };
-      const props = features[0].properties;
-      const pnu = props.pnu || props.PNU;
-      return pnu ? { pnu, err:null } : { pnu:null, err:'PNU 필드 없음' };
-    } catch(e) { return { pnu:null, err:'지적도 요청 오류' }; }
-  }
+// ── CSV ──
+function dlCSV() {
+  if (!lastData) return;
+  const { years, rows } = lastData;
+  const as = Object.keys(rows);
+  const hdr = ['주소',...years.map(y=>y+'년'),'변동률(%)'];
+  const csvRows = [hdr];
+  as.forEach(addr=>{
+    const prices = years.map(y=>rows[addr][y]?.price||'');
+    const valid = prices.map(p=>p?parseInt(p):null).filter(p=>p!==null);
+    const chg = valid.length>=2?((valid[valid.length-1]-valid[0])/valid[0]*100).toFixed(1):'';
+    csvRows.push([addr,...prices,chg]);
+  });
+  const csv = csvRows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`공시지가_${lastData.years[0]}_${lastData.years[lastData.years.length-1]}.csv`; a.click();
+}
 
-  async function getPrice(pnu, year, key, domain) {
-    const p = new URLSearchParams({
-      key, pnu, stdrYear:String(year), format:'json', numOfRows:'10', pageNo:'1'
-    });
-    if (domain) p.set('domain', domain);
-    try {
-      const r = await fetch(PRICE_URL + '?' + p);
-      const d = await r.json();
-      let field = d?.indvdLandPrices?.field;
-      if (!field) return '';
-      if (!Array.isArray(field)) field = [field];
-      if (!field.length) return '';
-      const rec = field[0];
-      return rec.pblntfPclnd || rec.individualLandPrice || rec.ladpcl || '';
-    } catch(e) { return ''; }
-  }
-
-  async function lookupOne(addr, year, key, domain) {
-    const { x, y, err } = await geocode(addr, key, domain);
-    if (err) return { price:'', note:err, pnu:'' };
-    const { pnu, err:e2 } = await getPNU(x, y, key, domain);
-    if (e2) return { price:'', note:e2, pnu:'' };
-    const price = await getPrice(pnu, year, key, domain);
-    return { price, note: price ? '' : '공시지가 미확인', pnu };
-  }
-
-  // ── 조회 실행 ──
-  window.smgRun = async function() {
-    const key = document.getElementById('smg-key').value.trim();
-    const domain = document.getElementById('smg-domain').value.trim();
-    const yf = +document.getElementById('smg-yf').value;
-    const yt = +document.getElementById('smg-yt').value;
-    if (!key) { alert('인증키를 입력하세요.'); return; }
-    if (!addrs.length) { alert('조회할 주소를 추가하세요.'); return; }
-    if (yf > yt) { alert('시작 연도가 종료 연도보다 클 수 없습니다.'); return; }
-
-    const years = [];
-    for (let y = yf; y <= yt; y++) years.push(y);
-    const total = addrs.length * years.length;
-
-    const pg = document.getElementById('smg-prog'); pg.style.display = 'block';
-    document.getElementById('smg-result').style.display = 'none';
-    setProg(0, total);
-
-    const rows = {};
-    let done = 0;
-    for (const addr of addrs) {
-      rows[addr] = {};
-      for (const yr of years) {
-        rows[addr][yr] = await lookupOne(addr, yr, key, domain);
-        done++;
-        setProg(done, total);
-        await new Promise(r => setTimeout(r, 150)); // API 호출 간격
-      }
-    }
-
-    setTimeout(() => { pg.style.display = 'none'; }, 400);
-    lastData = { years, rows };
-    renderResults(lastData);
-  };
-
-  function setProg(done, total) {
-    const pct = total ? Math.round(done/total*100) : 0;
-    document.getElementById('smg-prog-txt').textContent =
-      done < total ? `조회 중… ${done} / ${total}건` : `완료 (${total}건)`;
-    document.getElementById('smg-prog-pct').textContent = pct + '%';
-    document.getElementById('smg-prog-bar').style.width = pct + '%';
-  }
-
-  // ── 결과 렌더링 ──
-  function renderResults(d) {
-    const { years, rows } = d;
-    const as = Object.keys(rows);
-
-    document.getElementById('smg-badge').textContent =
-      years[0] + '~' + years[years.length-1] + '년 (' + years.length + '개 연도)';
-
-    // 헤더
-    let hrow = '<tr><th>주소</th>';
-    years.forEach(y => { hrow += `<th>${y}</th>`; });
-    hrow += '<th>변동률</th></tr>';
-    document.getElementById('smg-thead').innerHTML = hrow;
-
-    // 바디
-    const tbody = document.getElementById('smg-tbody'); tbody.innerHTML = '';
-    as.forEach(addr => {
-      const tr = document.createElement('tr');
-      let cells = `<td title="${addr}">${addr.length > 22 ? addr.slice(0,20)+'…' : addr}</td>`;
-      const prices = years.map(y => { const p = rows[addr][y]?.price; return p ? parseInt(p) : null; });
-      prices.forEach((p, i) => {
-        if (p === null) {
-          const note = rows[addr][years[i]]?.note || '—';
-          cells += `<td class="smg-terr" title="${note}">—</td>`;
-        } else {
-          cells += `<td class="smg-tp">${p.toLocaleString('ko-KR')}</td>`;
-        }
-      });
-      const valid = prices.filter(p => p !== null);
-      if (valid.length >= 2) {
-        const chg = ((valid[valid.length-1]-valid[0])/valid[0]*100).toFixed(1);
-        const cls = +chg>0?'smg-cpos':+chg<0?'smg-cneg':'smg-czro';
-        cells += `<td class="${cls}">${+chg>0?'+':''}${chg}%</td>`;
-      } else { cells += '<td class="smg-te">—</td>'; }
-      tr.innerHTML = cells; tbody.appendChild(tr);
-    });
-
-    document.getElementById('smg-result').style.display = 'block';
-    document.getElementById('smg-result').scrollIntoView({ behavior:'smooth', block:'start' });
-  }
-
-  // ── 탭 전환 ──
-  window.smgTab = function(name, btn) {
-    document.querySelectorAll('.smg-tpanel').forEach(p => p.classList.remove('on'));
-    document.querySelectorAll('.smg-rtab').forEach(b => b.classList.remove('on'));
-    document.getElementById('smg-tp-' + name).classList.add('on');
-    btn.classList.add('on');
-    if (name === 'chart' && lastData) drawChart(lastData);
-  };
-
-  function drawChart(d) {
-    const { years, rows } = d;
-    const as = Object.keys(rows);
-    if (chartInst) { chartInst.destroy(); chartInst = null; }
-    const datasets = as.map((addr, i) => ({
-      label: addr.length > 16 ? addr.slice(0,14)+'…' : addr,
-      data: years.map(y => { const p = rows[addr][y]?.price; return p ? parseInt(p) : null; }),
-      borderColor: COLORS[i % COLORS.length],
-      backgroundColor: COLORS[i % COLORS.length] + '22',
-      borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
-      tension: 0.3, spanGaps: true,
-    }));
-    const ctx = document.getElementById('smg-chart').getContext('2d');
-    chartInst = new Chart(ctx, {
-      type: 'line',
-      data: { labels: years.map(y => y+'년'), datasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position:'bottom', labels:{ font:{family:'Pretendard',size:12}, padding:14 } },
-          tooltip: { callbacks: { label: c => c.raw
-            ? ` ${c.dataset.label}: ${c.raw.toLocaleString('ko-KR')} 원/㎡`
-            : ` ${c.dataset.label}: 데이터 없음` } }
-        },
-        scales: {
-          x: { grid:{color:'#e2dfd8'}, ticks:{font:{family:'Pretendard',size:11}} },
-          y: { grid:{color:'#e2dfd8'}, ticks:{font:{family:'Pretendard',size:11}, callback: v => v.toLocaleString('ko-KR')} }
-        }
-      }
-    });
-  }
-
-  // ── CSV ──
-  window.smgCSV = function() {
-    if (!lastData) return;
-    const { years, rows } = lastData;
-    const as = Object.keys(rows);
-    const hdr = ['주소', ...years.map(y=>y+'년'), '변동률(%)'];
-    const csvRows = [hdr];
-    as.forEach(addr => {
-      const prices = years.map(y => rows[addr][y]?.price || '');
-      const valid = prices.map(p => p ? parseInt(p) : null).filter(p=>p!==null);
-      const chg = valid.length>=2 ? ((valid[valid.length-1]-valid[0])/valid[0]*100).toFixed(1) : '';
-      csvRows.push([addr, ...prices, chg]);
-    });
-    const csv = csvRows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `공시지가_${years[0]}_${years[years.length-1]}.csv`; a.click();
-  };
-
-})();
+// ── 이력 ──
+function renderHistory() {
+  const ul = document.getElementById('sess-list'); ul.innerHTML='';
+  document.getElementById('hist-cnt').textContent = history.length+'건';
+  if (!history.length) { ul.innerHTML='<li class="estt">아직 조회 이력이 없습니다.</li>'; return; }
+  history.forEach((s,i)=>{
+    const preview = s.addrs.slice(0,2).join(', ')+(s.addrs.length>2?` 외 ${s.addrs.length-2}건`:'');
+    const li=document.createElement('li'); li.className='sess-item';
+    li.innerHTML=`
+      <div class="sess-meta"><span>${s.ts}</span><span class="sess-yr">${s.range}년</span></div>
+      <div class="sess-prev">${preview}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:3px">${s.addrs.length}건 조회</div>`;
+    li.onclick=()=>{
+      addrs=s.addrs.slice(); renderList();
+      lastData=s.data; renderResults(s.data);
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+      document.getElementById('panel-search').classList.add('on');
+      document.querySelector('.nav-btn').classList.add('on');
+      document.getElementById('topbar-title').textContent='주소 조회';
+    };
+    ul.appendChild(li);
+  });
+}
 </script>
 </body>
 </html>
